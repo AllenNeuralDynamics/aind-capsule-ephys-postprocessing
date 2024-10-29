@@ -47,6 +47,14 @@ use_motion_corrected_help = (
 use_motion_corrected_group.add_argument("static_use_motion_corrected", nargs="?", default="false", help=use_motion_corrected_help)
 use_motion_corrected_group.add_argument("--use-motion-corrected", action="store_true", help=use_motion_corrected_help)
 
+skip_extensions_group = parser.add_mutually_exclusive_group()
+skip_extensions_group_help = (
+    "If provided, it skips the computation of the specified extensions. The argument should be a list of strings "
+    "separated by commas (no spaces)."
+)
+use_motion_corrected_group.add_argument("static_skip_extensions", nargs="?", default="", help=skip_extensions_group_help)
+use_motion_corrected_group.add_argument("--skip-extensions", default="", help=skip_extensions_group_help)
+
 n_jobs_group = parser.add_mutually_exclusive_group()
 n_jobs_help = (
     "Number of jobs to use for parallel processing. Default is 0.8 (all available cores). "
@@ -66,10 +74,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     USE_MOTION_CORRECTED = args.use_motion_corrected or args.static_use_motion_corrected == "true"
+    SKIP_EXTENSIONS = args.skip_extensions or args.static_skip_extensions
     N_JOBS = args.static_n_jobs or args.n_jobs
     N_JOBS = int(N_JOBS) if not N_JOBS.startswith("0.") else float(N_JOBS)
     PARAMS_FILE = args.static_params_file or args.params_file
     PARAMS_STR = args.params_str
+
+    if SKIP_EXTENSIONS == "":
+        SKIP_EXTENSIONS = []
+    else:
+        SKIP_EXTENSIONS = SKIP_EXTENSIONS.split(",")
 
     # Use CO_CPUS env variable if available
     N_JOBS_CO = os.getenv("CO_CPUS")
@@ -270,6 +284,10 @@ if __name__ == "__main__":
         if recording_tmp is not None:
             print(f"\tSetting temporary binary recording")
             sorting_analyzer.set_temporary_recording(recording_tmp)
+
+        for skip_ext in SKIP_EXTENSIONS:
+            print(f"\tSkipping extension: {skip_ext}")
+            analyzer_dict.pop(skip_ext, None)
 
         # now compute all extensions
         print(f"\tComputing all postprocessing extensions")
