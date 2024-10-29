@@ -293,6 +293,13 @@ if __name__ == "__main__":
         print(f"\tComputing all postprocessing extensions")
         sorting_analyzer.compute(analyzer_dict)
 
+        # remove pca-based quality_metrics if principal_components is not computed
+        if not "principal_components" in analyzer_dict:
+            pca_metrics = sqm.get_quality_pca_metric_list()
+            for metric in pca_metrics:
+                if metric in quality_metrics_names:
+                    quality_metrics_names.remove(metric)
+
         print("\tComputing quality metrics")
         qm = sorting_analyzer.compute(
             "quality_metrics",
